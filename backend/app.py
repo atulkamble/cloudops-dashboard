@@ -4,7 +4,10 @@ import os, sqlite3
 
 app = Flask(__name__, static_folder="../frontend", static_url_path="")
 CORS(app)
-DB = os.getenv("DB_PATH", "/data/tasks.db")
+DB = os.getenv(
+    "DB_PATH",
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "tasks.db")),
+)
 os.makedirs(os.path.dirname(DB), exist_ok=True)
 
 def connect():
