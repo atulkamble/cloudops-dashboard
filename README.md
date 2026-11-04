@@ -42,7 +42,7 @@ Useful endpoints: `GET /api/health`, `GET /api/tasks`, `POST /api/tasks`, `PATCH
 
 ## Deploy to ECS
 
-The ECS template in `infra/ecs.yml` has not been converted to MySQL. The deployment steps below require an ECS task definition configured with a reachable external MySQL instance and credentials before they will work with this backend.
+The ECS task definition requires `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD` to connect to a reachable external MySQL instance. Configure the password as an ECS secret before deploying; the template does not provision a MySQL server.
 
 1. Create an AWS IAM role for GitHub Actions using GitHub OIDC. Restrict its trust policy to your GitHub owner/repository and `refs/heads/main`. Grant only the permissions needed to push to the two ECR repos and update/describe the ECS service.
 2. Configure repository variable `AWS_REGION` and secret `AWS_DEPLOY_ROLE_ARN` in GitHub.

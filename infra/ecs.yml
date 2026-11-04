@@ -112,14 +112,11 @@ Resources:
       Memory: !Ref ContainerMemory
       ExecutionRoleArn: !GetAtt ExecutionRole.Arn
       TaskRoleArn: !GetAtt TaskRole.Arn
-      Volumes: [{Name: task-data}]
       ContainerDefinitions:
         - Name: backend
           Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/${ProjectName}-backend:latest'
           Essential: true
           PortMappings: [{ContainerPort: 5000, Protocol: tcp}]
-          Environment: [{Name: DB_PATH, Value: /data/tasks.db}]
-          MountPoints: [{SourceVolume: task-data, ContainerPath: /data, ReadOnly: false}]
           LogConfiguration: {LogDriver: awslogs, Options: {awslogs-group: !Ref LogGroup, awslogs-region: !Ref AWS::Region, awslogs-stream-prefix: backend}}
         - Name: frontend
           Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/${ProjectName}-frontend:latest'
