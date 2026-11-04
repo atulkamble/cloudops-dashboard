@@ -1,0 +1,45 @@
+name: Build and deploy to Amazon ECS
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['README.md', 'infra/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  PROJECT_NAME: cloudops-dashboard
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - uses: aws-actions/amazon-ecr-login@v2
+        id: ecr
+      - name: Build and push images
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          SHA: ${{ github.sha }}
+        run: |
+          docker build -t "$REGISTRY/$PROJECT_NAME-frontend:$SHA" .
+          docker build -t "$REGISTRY/$PROJECT_NAME-backend:$SHA" ./backend
+          docker push "$REGISTRY/$PROJECT_NAME-frontend:$SHA"
+          docker push "$REGISTRY/$PROJECT_NAME-backend:$SHA"
+          docker tag "$REGISTRY/$PROJECT_NAME-frontend:$SHA" "$REGISTRY/$PROJECT_NAME-frontend:latest"
+          docker tag "$REGISTRY/$PROJECT_NAME-backend:$SHA" "$REGISTRY/$PROJECT_NAME-backend:latest"
+          docker push "$REGISTRY/$PROJECT_NAME-frontend:latest"
+          docker push "$REGISTRY/$PROJECT_NAME-backend:latest"
+      - name: Roll out ECS service
+        run: |
+          aws ecs update-service \
+            --cluster "$PROJECT_NAME-cluster" \
+            --service "$PROJECT_NAME-service" \
+            --force-new-deployment
+          aws ecs wait services-stable \
+            --cluster "$PROJECT_NAME-cluster" \
+            --services "$PROJECT_NAME-service"

@@ -1,0 +1,14 @@
+services:
+  frontend:
+    build: .
+    ports: ["8080:80"]
+    depends_on: [backend]
+    restart: unless-stopped
+  backend:
+    build: ./backend
+    environment: [DB_PATH=/data/tasks.db]
+    volumes: [tasks_data:/data]
+    expose: ["5000"]
+    restart: unless-stopped
+volumes:
+  tasks_data:
