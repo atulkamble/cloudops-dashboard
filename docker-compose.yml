@@ -6,9 +6,30 @@ services:
     restart: unless-stopped
   backend:
     build: ./backend
-    environment: [DB_PATH=/data/tasks.db]
-    volumes: [tasks_data:/data]
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${MYSQL_DATABASE:-cloudops}
+      DB_USER: ${MYSQL_USER:-cloudops}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-cloudops-dev-password}
+    depends_on:
+      mysql:
+        condition: service_healthy
     expose: ["5000"]
     restart: unless-stopped
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-cloudops}
+      MYSQL_USER: ${MYSQL_USER:-cloudops}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-cloudops-dev-password}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-cloudops-root-password}
+    volumes: [mysql_data:/var/lib/mysql]
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
 volumes:
-  tasks_data:
+  mysql_data:
